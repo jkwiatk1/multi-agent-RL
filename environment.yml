@@ -1,0 +1,10 @@
+name: rl_pytorch
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pip
+  - pip:
+      - pettingzoo
+      - stable-baselines3
+      - supersuit
