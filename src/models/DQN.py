@@ -3,11 +3,11 @@ import torch.nn as nn
 
 
 class DQN(nn.Module):
-    def __init__(self, state_dim, action_dim):
-        super(DQN, self).__init__()
-        self.fc1 = nn.Linear(state_dim, 128)
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, action_dim)
+    def __init__(self, state_dim, action_dim, h1_nodes=64, h2_nodes=32):
+        super().__init__()
+        self.fc1 = nn.Linear(state_dim, h1_nodes)
+        self.fc2 = nn.Linear(h1_nodes, h2_nodes)
+        self.fc3 = nn.Linear(h2_nodes, action_dim)
 
     def forward(self, state):
         # print(f"DQN Forward pass: state shape = {state.shape}")

@@ -1,7 +1,10 @@
 import os
+import time
 import torch
 import random
+import numpy as np
 from collections import deque
+from torch.utils.tensorboard import SummaryWriter
 from src.models.VDN import create_vdn
 from src.environments.mpe import create_environment, close_environment
 from src.utils import select_action, train_step, save_model, plot_rewards
@@ -13,20 +16,24 @@ params = {
     "state_dim": 18,
     "action_dim": 5,
     "gamma": 0.99,
-    "epsilon": 0.1,
+    "epsilon": 1,
     "epsilon_min": 0.01,
     "epsilon_decay": 0.995,
-    "batch_size": 4,
+    "batch_size": 64,
     "learning_rate": 0.001,
-    "num_episodes": 100,
+    "num_episodes": 5000,
+    "target_model_sync": 10,
     "model_save_path": "../results/vdn_mpe_model/",
     "render": False,
 }
 
 
 def train_vdn(params):
+    experiment_path = params["model_save_path"] + f"{params['num_episodes']}_epochs/"
+    os.makedirs(os.path.dirname(experiment_path), exist_ok=True)
+
     env = create_environment(render=params["render"], api="parallel")
-    num_agents = len(env.agents)  # Liczba agentów w środowisku
+    num_agents = len(env.agents)
     model = create_vdn(
         params["state_dim"], params["action_dim"], num_agents=num_agents
     ).to(device)
@@ -38,33 +45,43 @@ def train_vdn(params):
 
     optimizer = torch.optim.Adam(model.parameters(), lr=params["learning_rate"])
     replay_buffer = deque(maxlen=10000)
-    best_reward = -float("inf")
+    epsilon = params["epsilon"]
+
+    writer = SummaryWriter(log_dir=experiment_path + "tensorboard_logs")
+    start_time = time.time()
+
+    # Statystyki treningowe
     rewards = []
     losses = []
-    epsilon = params["epsilon"]
+    variances = []
+    episode_times = []
 
     for episode in range(params["num_episodes"]):
         observations, infos = env.reset()
-        total_reward = 0
-
+        episode_start = time.time()
         epsilon = max(params["epsilon_min"], epsilon * params["epsilon_decay"])
 
+        total_reward = 0
+        total_loss = 0
+
         while env.agents:
-            # Wybierz akcje dla wszystkich agentów
             actions = {
-                agent: select_action(
-                    observations[agent], model.agents[i], epsilon
-                )
+                agent: select_action(observations[agent], model.agents[i], epsilon)
                 for i, agent in enumerate(env.agents)
             }
 
-            # Wykonaj akcje
             new_observations, rewards_dict, terminations, truncations, infos = env.step(
                 actions
             )
+            if len(env.agents) == 0:
+                continue
+
             total_reward += sum(rewards_dict.values())
 
-            # Zapisz doświadczenia do bufora replay
+            if any(terminations.values()) or any(truncations.values()):
+                print("X")
+
+            # Zapisz doświadczenia
             replay_buffer.append(
                 (
                     [observations[agent] for agent in env.agents],  # Stany
@@ -91,29 +108,71 @@ def train_vdn(params):
                     num_agents=num_agents,
                     model_type="vdn",
                 )
-                losses.append(loss)
+                total_loss += loss
 
-        print(f"Episode {episode + 1}, Total Reward: {total_reward}")
+        losses.append(total_loss)
         rewards.append(total_reward)
+        episode_times.append(time.time() - episode_start)
+        writer.add_scalar("Episode/Reward", total_reward, episode)
+        writer.add_scalar("Episode/Loss", total_loss, episode)
+        writer.add_scalar("Episode/Time", episode_times[-1], episode)
+        writer.add_scalar("Episode/Epsilon", epsilon, episode)
+        # print(
+        #     f"Episode {episode + 1}, Total Reward: {total_reward}, Total Loss: {total_loss}"
+        # )
 
-        if episode % 10 == 0:
+        if episode % params["target_model_sync"] == 0:
+            print("New tgt_model loaded")
             target_model.load_state_dict(model.state_dict())
+            window_size = params["target_model_sync"]
+            mean_reward = np.mean(rewards[-window_size:])
+            variance = np.var(rewards[-window_size:])
+            variances.append(variance)
+            print(
+                f"Epizod {episode + 1}: Śr. nagroda (ostatnie {window_size}): {mean_reward}, Wariancja: {variance}"
+            )
+            writer.add_scalar("Stats/Mean Reward", mean_reward, episode)
+            writer.add_scalar("Stats/Variance", variance, episode)
 
-        best_reward = save_model(
-            model,
-            params["model_save_path"] + "best_vdn_model.pth",
-            total_reward,
-            best_reward,
-        )
+    save_model(
+        model,
+        experiment_path + "best_vdn_model.pth",
+    )
 
     close_environment(env)
+
+    # Wyniki
+    training_time = time.time() - start_time
+    mean_reward = np.mean(rewards)
+    variance = np.var(rewards)
+    print(f"Czas treningu: {training_time} sekund")
+    print(f"Średnia nagroda: {mean_reward}")
+    print(f"Wariancja nagród: {variance}")
+
     plot_rewards(
         rewards,
-        save_path=params["model_save_path"] + "vdn_training_rewards.png",
+        save_path=experiment_path + "vdn_training_rewards.png",
         title="VDN Training Rewards",
     )
 
-    plot_rewards(losses, save_path=params["model_save_path"] + "vdn_training_losses.png", title="Training Losses")
+    plot_rewards(
+        losses,
+        save_path=experiment_path + "vdn_training_losses.png",
+        title="Training Losses",
+        ylabel="Total Loss",
+        label="Total Loss",
+    )
+
+    plot_rewards(
+        variances,
+        save_path=experiment_path + "vdn_training_variance.png",
+        title="Training Variance",
+        ylabel="Variance",
+        label="Variance",
+        x_range=(0, params["num_episodes"]),
+    )
+
+    writer.close()
 
 
 if __name__ == "__main__":

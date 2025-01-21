@@ -51,7 +51,7 @@ if __name__ == "__main__":
     state_dim = 18  # Rozmiar stanu (dla każdego agenta)
     action_dim = 5  # Rozmiar przestrzeni akcji
     num_agents = 3  # Liczba agentów
-    best_model_path = "../results/vdn_mpe_model/best_vdn_model.pth"
+    best_model_path = "../results/vdn_mpe_model/200_epochs/best_vdn_model.pth"
 
     # Utworzenie modelu VDN
     model = create_vdn(state_dim, action_dim, num_agents=num_agents).to(device)
