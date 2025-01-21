@@ -127,38 +127,9 @@ def train_step(
                 next_q_values = target_model(
                     next_states
                 )  # tensor [batch_size, action_dim]
-                # 2101
-                # next_state_acts = torch.stack(
-                #     [
-                #         model.agents[i](next_states[i]).max(1)[1]
-                #         for i in range(num_agents)
-                #     ],
-                #     dim=0,
-                # )
-                # next_q_values = torch.stack(
-                #     [
-                #         target_model.agents[i](next_states[i])
-                #         .gather(1, next_state_acts[i].unsqueeze(-1))
-                #         .squeeze(-1)
-                #         for i in range(num_agents)
-                #     ],
-                #     dim=0,
-                # ).sum(dim=0)
 
             # # Sumuj nagrody globalnie
             global_rewards = sum(rewards)  # tensor [batch_size]
-            # # Sumowanie nagród z uwzględnieniem brakujących wartości
-            # fill_value = min([min(r) for r in rewards])  # Wartość do uzupełnienia braków
-            # max_agents = len(batch)
-            # # Wypełnianie brakujących nagród -1
-            # rewards_padded = [
-            #     torch.cat([r, torch.full((max_agents - len(r),), fill_value).to(device)])
-            #     if len(r) < max_agents else r for r in rewards
-            # ]
-            # # Przekształcenie na tensor
-            # rewards_tensor = torch.stack(rewards_padded, dim=0)  # [batch_size, num_agents]
-            # # Sumowanie nagród po agentach (z wypełnionym -1)
-            # global_rewards = rewards_tensor.sum(dim=0)
 
             # Oblicz maksymalne wartości Q dla następnych stanów
             next_q_values_max = torch.max(next_q_values, dim=1)[
@@ -182,74 +153,43 @@ def train_step(
 
         elif model_type == "qmix":
             # QMIX: Monotoniczne mieszanie wartości Q
-            agent_q_values = torch.stack(
-                [
-                    model.agents[i](states[i])
-                    .gather(1, actions[i].unsqueeze(1))
-                    .squeeze(1)
-                    for i in range(num_agents)
-                ],
-                dim=0,
-            )
-            with torch.no_grad():
-                next_agent_q_values = torch.stack(
-                    [
-                        target_model.agents[i](next_states[i]).max(dim=1)[0]
-                        for i in range(num_agents)
-                    ],
-                    dim=0,
-                )
-
-            global_state = torch.cat(states, dim=-1)
-            global_next_state = torch.cat(next_states, dim=-1)
-            q_values = model.mixing_network(global_state, agent_q_values)
-            next_q_values = target_model.mixing_network(
-                global_next_state, next_agent_q_values
-            )
+            pass
 
         elif model_type == "qatten":
             # Qatten: Mechanizm uwagi z globalnym stanem
-            agent_q_values = torch.stack(
-                [
-                    model.agents[i](states[i])
-                    .gather(1, actions[i].unsqueeze(1))
-                    .squeeze(1)
-                    for i in range(num_agents)
-                ],
-                dim=0,
-            )
+            # Przewidywanie wartości Q dla każdego agenta
+            global_q, weighted_q = model(
+                states)  # global_q: [num_agents, batch_size, action_dim], weighted_q: [batch_size, action_dim]
 
-            # Przygotowanie globalnych stanów
-            global_state = torch.cat(states, dim=-1)
-            global_next_state = torch.cat(next_states, dim=-1)
-
-            # Mechanizm uwagi i mieszanie
-            q_values = model(global_state, agent_q_values)
+            # Obliczanie wartości Q dla następnych stanów
             with torch.no_grad():
-                next_agent_q_values = torch.stack(
-                    [
-                        target_model.agents[i](next_states[i]).max(dim=1)[0]
-                        for i in range(num_agents)
-                    ],
-                    dim=0,
-                )
-                next_q_values = target_model(global_next_state, next_agent_q_values)
+                next_global_q, next_weighted_q = target_model(next_states)
+                # next_global_q: [num_agents, batch_size, action_dim]
+                # next_weighted_q: [batch_size, action_dim]
 
-        # Suma nagród dla wszystkich agentów
-        # targets = torch.stack(rewards, dim=0).sum(dim=0) + gamma * next_q_values * (
-        #     1 - dones
-        # )
-        # max_len = max(r.size(0) for r in rewards)
-        # rewards = [
-        #     torch.nn.functional.pad(r, (0, max_len - r.size(0))) for r in rewards
-        # ]
-        # next_q_values = next_q_values[:max_len]
-        #
-        # rewards = torch.stack(rewards, dim=0)  # (num_agents, max_len)
-        # dones = dones[:max_len]
-        # targets = rewards.sum(dim=0) + discount_factor_g * next_q_values * (1 - dones)
+            # Wyciągamy maksymalne wartości Q dla następnych stanów (global_q na poziomie agentów)
+            next_q_values_max = torch.max(next_weighted_q, dim=1)[0]  # tensor [batch_size]
 
-    # loss = torch.nn.MSELoss()(q_values, targets)
+            # Obliczanie globalnych nagród
+            global_rewards = sum(rewards)  # tensor [batch_size]
+
+            # Obliczanie wartości Q dla celu
+            q_targets = global_rewards + discount_factor_g * next_q_values_max * (1 - dones)
+
+            # Zbieranie akcji dla każdego agenta
+            actions_combined = torch.stack(
+                actions, dim=0
+            )  # tensor [num_agents, batch_size]
+
+            # Wybieranie wartości Q na podstawie podjętych akcji (dla każdego agenta)
+            q_values_taken_per_agent = torch.stack([
+                global_q[i].gather(1, actions_combined[i].unsqueeze(-1)).squeeze(-1)
+                for i in range(global_q.size(0))
+            ], dim=0)  # [num_agents, batch_size]
+
+            # Sumowanie wartości Q dla wszystkich agentów
+            q_values_taken = q_values_taken_per_agent.sum(dim=0)  # [batch_size]
+
     loss = torch.nn.MSELoss()(q_values_taken, q_targets)
     optimizer.zero_grad()
     loss.backward()

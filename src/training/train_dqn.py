@@ -22,7 +22,7 @@ params = {
     "batch_size": 64,
     "learning_rate": 0.001,
     "num_episodes": 5000,
-    "target_model_sync": 10,
+    "target_model_sync": 100,
     "model_save_path": "../results/dqn_mpe_model/",
     "render": False,
 }
@@ -113,11 +113,13 @@ def train(params):
             target_model.load_state_dict(model.state_dict())
             window_size = params["target_model_sync"]
             mean_reward = np.mean(rewards[-window_size:])
+            mean_loss = np.mean(losses[-window_size:])
             variance = np.var(rewards[-window_size:])
             variances.append(variance)
             print(
-                f"Epizod {episode + 1}: Śr. nagroda (ostatnie {window_size}): {mean_reward}, Wariancja: {variance}"
+                f"Epizod {episode + 1}: Śr. nagroda (ostatnie {window_size}): {mean_reward}, Śr. strata: {mean_loss}, Wariancja: {variance}"
             )
+            writer.add_scalar("Stats/Loss", mean_loss, episode)
             writer.add_scalar("Stats/Mean Reward", mean_reward, episode)
             writer.add_scalar("Stats/Variance", variance, episode)
 

@@ -5,9 +5,9 @@ import random
 import numpy as np
 from collections import deque
 from torch.utils.tensorboard import SummaryWriter
-from src.models.VDN import create_vdn
+from src.models.QATTEN import create_qatten
 from src.environments.mpe import create_environment, close_environment
-from src.utils import select_action, train_step, save_model, plot_rewards
+from src.utils import train_step, select_action, save_model, plot_rewards
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -21,24 +21,24 @@ params = {
     "epsilon_decay": 0.995,
     "batch_size": 64,
     "learning_rate": 0.001,
-    "num_episodes": 10100,
+    "num_episodes": 1000,
     "target_model_sync": 100,
-    "model_save_path": "../results/vdn_mpe_model/",
+    "model_save_path": "../results/qatten_mpe_model/",
     "render": False,
 }
 
 
-def train_vdn(params):
+def train_qatten(params):
     experiment_path = params["model_save_path"] + f"{params['num_episodes']}_epochs/"
     os.makedirs(os.path.dirname(experiment_path), exist_ok=True)
 
     env = create_environment(render=params["render"], api="parallel")
     num_agents = len(env.agents)
-    model = create_vdn(
-        params["state_dim"], params["action_dim"], num_agents=num_agents
-    ).to(device)
-    target_model = create_vdn(
-        params["state_dim"], params["action_dim"], num_agents=num_agents
+    model = create_qatten(params["state_dim"], params["action_dim"], num_agents).to(
+        device
+    )
+    target_model = create_qatten(
+        params["state_dim"], params["action_dim"], num_agents
     ).to(device)
     target_model.load_state_dict(model.state_dict())
     target_model.eval()
@@ -80,19 +80,17 @@ def train_vdn(params):
             # Zapisz doświadczenia
             replay_buffer.append(
                 (
-                    [observations[agent] for agent in env.agents],  # Stany
-                    [actions[agent] for agent in env.agents],  # Akcje
-                    [rewards_dict[agent] for agent in env.agents],  # Nagrody
-                    [new_observations[agent] for agent in env.agents],  # Nowe stany
-                    any(terminations.values())
-                    or any(truncations.values()),  # Czy epizod zakończony
+                    [observations[agent] for agent in env.agents],
+                    [actions[agent] for agent in env.agents],
+                    [rewards_dict[agent] for agent in env.agents],
+                    [new_observations[agent] for agent in env.agents],
+                    any(terminations.values()) or any(truncations.values()),
                 )
             )
 
             # Przejdź do nowych obserwacji
             observations = new_observations
 
-            # Trenuj model
             if len(replay_buffer) >= params["batch_size"]:
                 batch = random.sample(replay_buffer, params["batch_size"])
                 loss = train_step(
@@ -102,7 +100,7 @@ def train_vdn(params):
                     optimizer,
                     params["gamma"],
                     num_agents=num_agents,
-                    model_type="vdn",
+                    model_type="qatten",
                 )
                 total_loss += loss
 
@@ -129,10 +127,7 @@ def train_vdn(params):
             writer.add_scalar("Stats/Mean Reward", mean_reward, episode)
             writer.add_scalar("Stats/Variance", variance, episode)
 
-    save_model(
-        model,
-        experiment_path + "best_vdn_model.pth",
-    )
+    save_model(model, experiment_path + "best_qatten_model.pth")
 
     close_environment(env)
 
@@ -146,13 +141,13 @@ def train_vdn(params):
 
     plot_rewards(
         rewards,
-        save_path=experiment_path + "vdn_training_rewards.png",
-        title="VDN Training Rewards",
+        save_path=experiment_path + "qatten_training_rewards.png",
+        title="Qatten Training Rewards",
     )
 
     plot_rewards(
         losses,
-        save_path=experiment_path + "vdn_training_losses.png",
+        save_path=experiment_path + "qatten_training_losses.png",
         title="Training Losses",
         ylabel="Total Loss",
         label="Total Loss",
@@ -160,7 +155,7 @@ def train_vdn(params):
 
     plot_rewards(
         variances,
-        save_path=experiment_path + "vdn_training_variance.png",
+        save_path=experiment_path + "qatten_training_variance.png",
         title="Training Variance",
         ylabel="Variance",
         label="Variance",
@@ -171,4 +166,4 @@ def train_vdn(params):
 
 
 if __name__ == "__main__":
-    train_vdn(params)
+    train_qatten(params)
