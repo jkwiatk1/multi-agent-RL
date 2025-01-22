@@ -21,7 +21,7 @@ params = {
     "epsilon_decay": 0.995,
     "batch_size": 64,
     "learning_rate": 0.001,
-    "num_episodes": 20000,
+    "num_episodes": 1000,
     "target_model_sync": 100,
     "model_save_path": "../results/qatten_mpe_model/",
     "render": False,
@@ -77,7 +77,6 @@ def train_qatten(params):
 
             total_reward += sum(rewards_dict.values())
 
-            # Zapisz doświadczenia
             replay_buffer.append(
                 (
                     [observations[agent] for agent in env.agents],
@@ -88,7 +87,6 @@ def train_qatten(params):
                 )
             )
 
-            # Przejdź do nowych obserwacji
             observations = new_observations
 
             if len(replay_buffer) >= params["batch_size"]:

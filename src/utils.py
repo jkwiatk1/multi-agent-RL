@@ -141,47 +141,30 @@ def train_step(
             pass
 
         elif model_type == "qatten":
-            # Qatten: Mechanizm uwagi z globalnym stanem
-            # Przewidywanie wartości Q dla każdego agenta
-            global_q, weighted_q = model(
-                states
-            )  # global_q: [num_agents, batch_size, action_dim], weighted_q: [batch_size, action_dim]
-
-            # Obliczanie wartości Q dla następnych stanów
-            with torch.no_grad():
-                next_global_q, next_weighted_q = target_model(next_states)
-                # next_global_q: [num_agents, batch_size, action_dim]
-                # next_weighted_q: [batch_size, action_dim]
-
-            # Wyciągamy maksymalne wartości Q dla następnych stanów (global_q na poziomie agentów)
-            next_q_values_max = torch.max(next_weighted_q, dim=1)[
-                0
-            ]  # tensor [batch_size]
-
-            # Obliczanie globalnych nagród
+            # Qatten: Agregacja wartości Q z uwzględnieniem mechanizmu uwagi
             global_rewards = sum(rewards)  # tensor [batch_size]
+            q_values = model(states)  # [batch_size, action_dim]
 
-            # Obliczanie wartości Q dla celu
-            q_targets = global_rewards + discount_factor_g * next_q_values_max * (
-                1 - dones
-            )
+            # Q_expected
+            actions_combined = torch.stack(actions, dim=1)  # [batch_size, num_agents]
+            # Indeksy globalnych akcji (dla wartości Q)
+            global_action_indices = torch.argmax(actions_combined, dim=1).unsqueeze(
+                -1
+            )  # [batch_size, 1]
 
-            # Zbieranie akcji dla każdego agenta
-            actions_combined = torch.stack(
-                actions, dim=0
-            )  # tensor [num_agents, batch_size]
+            # Wybieranie wartości Q na podstawie podjętych akcji (globalnie)
+            q_values_taken = q_values.gather(1, global_action_indices).squeeze(
+                -1
+            )  # [batch_size]
 
-            # Wybieranie wartości Q na podstawie podjętych akcji (dla każdego agenta)
-            q_values_taken_per_agent = torch.stack(
-                [
-                    global_q[i].gather(1, actions_combined[i].unsqueeze(-1)).squeeze(-1)
-                    for i in range(global_q.size(0))
-                ],
-                dim=0,
-            )  # [num_agents, batch_size]
+            # Q_target
+            with torch.no_grad():
+                next_q_values = target_model(next_states)  # [batch_size, action_dim]
+                next_q_values_max = torch.max(next_q_values, dim=1)[0]  # [batch_size]
 
-            # Sumowanie wartości Q dla wszystkich agentów
-            q_values_taken = q_values_taken_per_agent.sum(dim=0)  # [batch_size]
+            q_targets = (
+                global_rewards + discount_factor_g * (1 - dones) * next_q_values_max
+            )  # [batch_size]
 
     loss = torch.nn.MSELoss()(q_values_taken, q_targets)
     optimizer.zero_grad()

@@ -9,10 +9,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def evaluate(model, env, num_episodes=10, num_agents=3):
     """
-    Ewaluacja modelu VDN w środowisku wieloagentowym.
+    Ewaluacja modelu Qatten w środowisku wieloagentowym.
 
     Args:
-        model: Model VDN.
+        model: Model Qatten.
         env: Środowisko wieloagentowe.
         num_episodes: Liczba epizodów ewaluacji.
         num_agents: Liczba agentów w środowisku.
@@ -24,7 +24,6 @@ def evaluate(model, env, num_episodes=10, num_agents=3):
         episode_reward = 0
 
         while env.agents:
-            # Wybierz akcje dla wszystkich agentów
             actions = {
                 agent: select_action(observations[agent], model.agents[i], epsilon=0.0)
                 for i, agent in enumerate(env.agents)
@@ -42,7 +41,7 @@ def evaluate(model, env, num_episodes=10, num_agents=3):
 
     plot_rewards(
         total_rewards,
-        save_path="../results/qatten_mpe_model/20000_epochs_best/evaluation_rewards.png",
+        save_path="../results/qatten_mpe_model/1000_epochs/evaluation_rewards.png",
         title="Evaluation Rewards",
     )
 
@@ -51,17 +50,12 @@ if __name__ == "__main__":
     state_dim = 18  # Rozmiar stanu (dla każdego agenta)
     action_dim = 5  # Rozmiar przestrzeni akcji
     num_agents = 3  # Liczba agentów
-    best_model_path = "../results/qatten_mpe_model/20000_epochs_best/best_qatten_model.pth"
+    best_model_path = "../results/qatten_mpe_model/1000_epochs/best_qatten_model.pth"
 
     model = create_qatten(state_dim, action_dim, num_agents=num_agents).to(device)
     model.load_state_dict(torch.load(best_model_path, map_location=device))
     print("Loaded best model from:", best_model_path)
 
-    # Utworzenie środowiska
     env = create_environment(render=True, api="parallel")
-
-    # Ewaluacja modelu
     evaluate(model, env, num_episodes=10, num_agents=num_agents)
-
-    # Zamknięcie środowiska
     close_environment(env)
