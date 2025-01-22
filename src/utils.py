@@ -67,7 +67,9 @@ def train_step(
         #     next_q_values = target_model(next_states).max(dim=1)[0]
 
         # double DQN - target zwraca Q dla akcji wybranej przez model bazowy (podobno lepsze)
-        q_values = model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
+        q_values_taken = model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
+        # q_values = model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
+
         with torch.no_grad():
             next_state_acts = model(next_states).max(1)[1]
             next_q_values = (
@@ -76,7 +78,8 @@ def train_step(
                 .squeeze(-1)
             )
 
-        targets = rewards + discount_factor_g * next_q_values * (1 - dones)
+        q_targets = rewards + discount_factor_g * next_q_values * (1 - dones)
+        # targets = rewards + discount_factor_g * next_q_values * (1 - dones)
 
     elif model_type in ["vdn", "qmix", "qatten"]:
         # Wielu agentów
@@ -100,29 +103,7 @@ def train_step(
 
         if model_type == "vdn":
             # VDN: Suma wartości Q dla wszystkich agentów
-            # 2101
-            # q_values = torch.stack(
-            #     [
-            #         model.agents[i](states[i])
-            #         .gather(1, actions[i].unsqueeze(1))
-            #         .squeeze(1)
-            #         for i in range(num_agents)
-            #     ],
-            #     dim=0,
-            # ).sum(dim=0)
             q_values = model(states)  # [batch_size, action_dim]
-
-            # orginal DQN
-            # with torch.no_grad():
-            #     next_q_values = torch.stack(
-            #         [
-            #             target_model.agents[i](next_states[i]).max(dim=1)[0]
-            #             for i in range(num_agents)
-            #         ],
-            #         dim=0,
-            #     ).sum(dim=0)
-
-            # Double DQN
             with torch.no_grad():
                 next_q_values = target_model(
                     next_states
