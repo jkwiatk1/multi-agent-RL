@@ -68,8 +68,6 @@ def train_step(
 
         # double DQN - target zwraca Q dla akcji wybranej przez model bazowy (podobno lepsze)
         q_values_taken = model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
-        # q_values = model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
-
         with torch.no_grad():
             next_state_acts = model(next_states).max(1)[1]
             next_q_values = (
@@ -79,7 +77,6 @@ def train_step(
             )
 
         q_targets = rewards + discount_factor_g * next_q_values * (1 - dones)
-        # targets = rewards + discount_factor_g * next_q_values * (1 - dones)
 
     elif model_type in ["vdn", "qmix", "qatten"]:
         # Wielu agentów
@@ -87,6 +84,7 @@ def train_step(
             torch.tensor([s[i] for s in states if len(s) > i]).to(device)
             for i in range(num_agents)
         ]
+        # TODO try states = torch.stack([torch.tensor(s).to(device) for s in states])  # [num_agents, batch_size, state_dim]
         next_states = [
             torch.tensor([ns[i] for ns in next_states if len(ns) > i]).to(device)
             for i in range(num_agents)
@@ -103,33 +101,39 @@ def train_step(
 
         if model_type == "vdn":
             # VDN: Suma wartości Q dla wszystkich agentów
-            q_values = model(states)  # [batch_size, action_dim]
-            with torch.no_grad():
-                next_q_values = target_model(
-                    next_states
-                )  # tensor [batch_size, action_dim]
-
-            # # Sumuj nagrody globalnie
             global_rewards = sum(rewards)  # tensor [batch_size]
+            q_values = model(states)  # [num_agents, batch_size, action_dim]
 
-            # Oblicz maksymalne wartości Q dla następnych stanów
-            next_q_values_max = torch.max(next_q_values, dim=1)[
-                0
-            ]  # tensor [batch_size]
-
-            # Oblicz Q_target
-            q_targets = global_rewards + discount_factor_g * next_q_values_max * (
-                1 - dones
-            )  # tensor o rozmiarze [batch_size]
-
-            # Rozpakuj akcje dla każdego agenta
+            # Obliczanie Q_expected
             actions_combined = torch.stack(
                 actions, dim=0
             )  # tensor [num_agents, batch_size]
 
-            # Wybierz wartości Q dla wykonanych akcji
-            q_values_taken = q_values.gather(1, actions_combined.T).sum(
-                dim=1
+            # Wybieranie wartości Q na podstawie podjętych akcji (dla każdego agenta)
+            q_values_taken_per_agent = torch.stack(
+                [
+                    q_values[i].gather(1, actions_combined[i].unsqueeze(-1)).squeeze(-1)
+                    for i in range(model.num_agents)
+                ],
+                dim=0,
+            )  # [num_agents, batch_size]
+            # TODO try q_values_taken_per_agent = q_values.gather(2, actions_combined.unsqueeze(-1)).squeeze(-1)
+            q_values_taken = q_values_taken_per_agent.sum(dim=0)  # [batch_size]
+
+            # Obliczanie Q_target
+            with torch.no_grad():
+                next_q_values = target_model(
+                    next_states
+                )  # [num_agents, batch_size, action_dim]
+
+                next_q_values_max = torch.max(next_q_values, dim=2)[
+                    0
+                ]  # [num_agents, batch_size]
+
+            q_targets = global_rewards + discount_factor_g * (
+                1 - dones
+            ) * next_q_values_max.sum(
+                dim=0
             )  # [batch_size]
 
         elif model_type == "qmix":
@@ -140,7 +144,8 @@ def train_step(
             # Qatten: Mechanizm uwagi z globalnym stanem
             # Przewidywanie wartości Q dla każdego agenta
             global_q, weighted_q = model(
-                states)  # global_q: [num_agents, batch_size, action_dim], weighted_q: [batch_size, action_dim]
+                states
+            )  # global_q: [num_agents, batch_size, action_dim], weighted_q: [batch_size, action_dim]
 
             # Obliczanie wartości Q dla następnych stanów
             with torch.no_grad():
@@ -149,13 +154,17 @@ def train_step(
                 # next_weighted_q: [batch_size, action_dim]
 
             # Wyciągamy maksymalne wartości Q dla następnych stanów (global_q na poziomie agentów)
-            next_q_values_max = torch.max(next_weighted_q, dim=1)[0]  # tensor [batch_size]
+            next_q_values_max = torch.max(next_weighted_q, dim=1)[
+                0
+            ]  # tensor [batch_size]
 
             # Obliczanie globalnych nagród
             global_rewards = sum(rewards)  # tensor [batch_size]
 
             # Obliczanie wartości Q dla celu
-            q_targets = global_rewards + discount_factor_g * next_q_values_max * (1 - dones)
+            q_targets = global_rewards + discount_factor_g * next_q_values_max * (
+                1 - dones
+            )
 
             # Zbieranie akcji dla każdego agenta
             actions_combined = torch.stack(
@@ -163,10 +172,13 @@ def train_step(
             )  # tensor [num_agents, batch_size]
 
             # Wybieranie wartości Q na podstawie podjętych akcji (dla każdego agenta)
-            q_values_taken_per_agent = torch.stack([
-                global_q[i].gather(1, actions_combined[i].unsqueeze(-1)).squeeze(-1)
-                for i in range(global_q.size(0))
-            ], dim=0)  # [num_agents, batch_size]
+            q_values_taken_per_agent = torch.stack(
+                [
+                    global_q[i].gather(1, actions_combined[i].unsqueeze(-1)).squeeze(-1)
+                    for i in range(global_q.size(0))
+                ],
+                dim=0,
+            )  # [num_agents, batch_size]
 
             # Sumowanie wartości Q dla wszystkich agentów
             q_values_taken = q_values_taken_per_agent.sum(dim=0)  # [batch_size]

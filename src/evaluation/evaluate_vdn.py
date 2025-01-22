@@ -24,7 +24,6 @@ def evaluate(model, env, num_episodes=10, num_agents=3):
         episode_reward = 0
 
         while env.agents:
-            # Wybierz akcje dla wszystkich agentów
             actions = {
                 agent: select_action(observations[agent], model.agents[i], epsilon=0.0)
                 for i, agent in enumerate(env.agents)

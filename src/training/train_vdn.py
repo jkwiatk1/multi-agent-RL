@@ -15,14 +15,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 params = {
     "state_dim": 18,
     "action_dim": 5,
-    "gamma": 0.99,
+    "gamma": 0.95,
     "epsilon": 1,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.995,
+    "epsilon_decay": 0.993,
     "batch_size": 64,
     "learning_rate": 0.001,
-    "num_episodes": 10100,
-    "target_model_sync": 100,
+    "num_episodes": 10000,
+    "target_model_sync": 50,
     "model_save_path": "../results/vdn_mpe_model/",
     "render": False,
 }

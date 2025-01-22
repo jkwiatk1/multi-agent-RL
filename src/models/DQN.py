@@ -18,5 +18,4 @@ class DQN(nn.Module):
 
 
 def create_dqn(state_dim, action_dim):
-    """Funkcja pomocnicza do tworzenia modelu DQN."""
     return DQN(state_dim, action_dim)
