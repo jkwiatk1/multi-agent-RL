@@ -1,7 +1,8 @@
-import torch
 import numpy as np
-from src.models.VDN import create_vdn
+import torch
+
 from src.environments.mpe import create_environment, close_environment
+from src.models.VDN import create_vdn
 from src.utils import select_action, plot_rewards
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -41,7 +42,7 @@ def evaluate(model, env, num_episodes=10, num_agents=3):
 
     plot_rewards(
         total_rewards,
-        save_path="../results/vdn_mpe_model/10000_epochs_best/evaluation_rewards.png",
+        save_path="../results/vdn_mpe_model/20000_epochs/0.0001_lr/0.9996_eps/evaluation_rewards.png",
         title="Evaluation Rewards",
     )
 
@@ -50,7 +51,7 @@ if __name__ == "__main__":
     state_dim = 18  # Rozmiar stanu (dla każdego agenta)
     action_dim = 5  # Rozmiar przestrzeni akcji
     num_agents = 3  # Liczba agentów
-    best_model_path = "../results/vdn_mpe_model/10000_epochs_best/best_vdn_model.pth"
+    best_model_path = "../results/vdn_mpe_model/20000_epochs/0.0001_lr/0.9996_eps/best_vdn_model.pth"
 
     # Utworzenie modelu VDN
     model = create_vdn(state_dim, action_dim, num_agents=num_agents).to(device)
