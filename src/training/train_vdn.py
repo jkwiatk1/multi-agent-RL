@@ -1,12 +1,14 @@
 import os
-import time
-import torch
 import random
-import numpy as np
+import time
 from collections import deque
+
+import numpy as np
+import torch
 from torch.utils.tensorboard import SummaryWriter
-from src.models.VDN import create_vdn
+
 from src.environments.mpe import create_environment, close_environment
+from src.models.VDN import create_vdn
 from src.utils import select_action, train_step, save_model, plot_rewards
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -18,10 +20,10 @@ params = {
     "gamma": 0.95,
     "epsilon": 1,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.993,
+    "epsilon_decay": 0.9996,
     "batch_size": 64,
-    "learning_rate": 0.001,
-    "num_episodes": 10000,
+    "learning_rate": 0.0001,
+    "num_episodes": 20001,
     "target_model_sync": 50,
     "model_save_path": "../results/vdn_mpe_model/",
     "render": False,
@@ -29,7 +31,8 @@ params = {
 
 
 def train_vdn(params):
-    experiment_path = params["model_save_path"] + f"{params['num_episodes']}_epochs/"
+    experiment_path = params[
+                          "model_save_path"] + f"{params['num_episodes']}_epochs/" + f"{params['learning_rate']}_lr/" + f"{params['epsilon_decay']}_eps/"
     os.makedirs(os.path.dirname(experiment_path), exist_ok=True)
 
     env = create_environment(render=params["render"], api="parallel")
