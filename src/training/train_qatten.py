@@ -20,9 +20,10 @@ params = {
     "gamma": 0.99,
     "epsilon": 1,
     "epsilon_min": 0.01,
-    "epsilon_decay": 0.995,
+    # "epsilon_decay": 0.995,
+    "epsilon_decay": 0.99,
     "batch_size": 64,
-    "learning_rate": 0.001,
+    "learning_rate": 0.0001,
     "num_episodes": 5000,
     "target_model_sync": 100,
     "model_save_path": "../results/qatten_mpe_model/",
@@ -31,7 +32,8 @@ params = {
 
 
 def train_qatten(params):
-    experiment_path = params["model_save_path"] + f"{params['num_episodes']}_epochs/"
+    experiment_path = params[
+                          "model_save_path"] + f"{params['num_episodes']}_epochs/" + f"{params['learning_rate']}_lr/" + f"{params['epsilon_decay']}_eps/"
     os.makedirs(os.path.dirname(experiment_path), exist_ok=True)
 
     env = create_environment(render=params["render"], api="parallel")
