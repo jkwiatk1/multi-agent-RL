@@ -1,8 +1,9 @@
 import os
-import torch
 import random
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -84,7 +85,9 @@ def train_step(
             torch.tensor([s[i] for s in states if len(s) > i]).to(device)
             for i in range(num_agents)
         ]
-        # TODO try states = torch.stack([torch.tensor(s).to(device) for s in states])  # [num_agents, batch_size, state_dim]
+        # states_2 = torch.stack([torch.tensor(s).to(device) for s in states])
+        # TODO try # [num_agents, batch_size, state_dim]
+        # next_states = torch.stack([torch.tensor(ns).to(device) for ns in next_states], dim=0)
         next_states = [
             torch.tensor([ns[i] for ns in next_states if len(ns) > i]).to(device)
             for i in range(num_agents)

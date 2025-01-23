@@ -1,12 +1,14 @@
 import os
-import time
-import torch
 import random
-import numpy as np
+import time
 from collections import deque
+
+import numpy as np
+import torch
 from torch.utils.tensorboard import SummaryWriter
-from src.models.QATTEN import create_qatten
+
 from src.environments.mpe import create_environment, close_environment
+from src.models.QATTEN import create_qatten
 from src.utils import train_step, select_action, save_model, plot_rewards
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -21,7 +23,7 @@ params = {
     "epsilon_decay": 0.995,
     "batch_size": 64,
     "learning_rate": 0.001,
-    "num_episodes": 1000,
+    "num_episodes": 5000,
     "target_model_sync": 100,
     "model_save_path": "../results/qatten_mpe_model/",
     "render": False,

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from src.models.DQN import DQN
 
 
@@ -62,7 +63,7 @@ class Qatten(nn.Module):
         Returns:
             global_q_values (torch.Tensor): Wynikowe globalne wartości Q [batch_size, action_dim].
         """
-        batch_size = states[0].size(0)
+        # batch_size = states.size(0)
         q_values = torch.stack(
             [agent(state) for agent, state in zip(self.agents, states)], dim=1
         )  # [batch_size, num_agents, action_dim]
@@ -99,14 +100,18 @@ class Qatten(nn.Module):
         )  # [batch_size, num_agents, 1]
 
         scaled_q_values = (
-            scaling_factors * weighted_qs
+                scaling_factors * weighted_qs
         )  # [batch_size, num_agents, action_dim]
-        summed_q_values = scaled_q_values.sum(dim=1)  # [batch_size, action_dim]
+        summed_q_values = torch.mean(scaled_q_values, dim=1)
+        # summed_q_values = scaled_q_values.sum(dim=1)  # [batch_size, action_dim]
 
         # Bias
-        c_values = self.constraint_layer(
-            states[0]
-        )  # Zakładając, że wartości c są obliczane na podstawie jednego stanu (można rozważyć średnią)
+        c_values = torch.stack([self.constraint_layer(state) for state in states],
+                               dim=1)  # [batch_size, num_agents, attention_dim]
+        c_values = torch.mean(c_values, dim=1)
+        # c_values = self.constraint_layer(
+        #     states[0]
+        # )  # Zakładając, że wartości c są obliczane na podstawie jednego stanu (można rozważyć średnią)
         global_q_values = summed_q_values + c_values
 
         return global_q_values
