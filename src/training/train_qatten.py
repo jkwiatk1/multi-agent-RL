@@ -23,7 +23,7 @@ params = {
     "epsilon_decay": 0.9996,
     "batch_size": 64,
     "learning_rate": 0.0001,
-    "num_episodes": 20000,
+    "num_episodes": 30000,
     "target_model_sync": 100,
     "model_save_path": "../results/qatten_mpe_model/",
     "render": False,
