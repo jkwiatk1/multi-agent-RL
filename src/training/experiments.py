@@ -1,3 +1,5 @@
+import torch
+
 from src.training.train_dqn import train_dqn
 from src.training.train_qatten import train_qatten
 from src.training.train_vdn import train_vdn
@@ -92,10 +94,12 @@ params_qatten_25k_95 = {
     "render": False,
 }
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 if __name__ == "__main__":
-    train_vdn(params_vdn_25k_95)
-    train_vdn(params_vdn_25k_9)
-    train_dqn(params_dqn_25k_95)
-    train_dqn(params_dqn_25k_9)
-    train_qatten(params_qatten_25k_95)
-    train_qatten(params_qatten_25k_9)
+    train_vdn(params_vdn_25k_95, device)
+    train_vdn(params_vdn_25k_9, device)
+    train_dqn(params_dqn_25k_95, device)
+    train_dqn(params_dqn_25k_9, device)
+    train_qatten(params_qatten_25k_95, device)
+    train_qatten(params_qatten_25k_9, device)

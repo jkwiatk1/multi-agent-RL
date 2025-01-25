@@ -30,7 +30,7 @@ params = {
 }
 
 
-def train(params):
+def train_dqn(params, device):
     experiment_path = (
             f"{params['model_save_path']}"
             + f"{params['num_episodes']}_epochs/"
@@ -172,4 +172,4 @@ def train(params):
 
 
 if __name__ == "__main__":
-    train(params)
+    train_dqn(params, device)

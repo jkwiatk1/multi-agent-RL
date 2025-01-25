@@ -23,16 +23,20 @@ params = {
     "epsilon_decay": 0.9996,
     "batch_size": 64,
     "learning_rate": 0.0001,
-    "num_episodes": 30000,
+    "num_episodes": 10000,
     "target_model_sync": 100,
     "model_save_path": "../results/qatten_mpe_model/",
     "render": False,
 }
 
 
-def train_qatten(params):
-    experiment_path = params[
-                          "model_save_path"] + f"{params['num_episodes']}_epochs/" + f"{params['learning_rate']}_lr/" + f"{params['epsilon_decay']}_eps/"
+def train_qatten(params, device):
+    experiment_path = (
+            params["model_save_path"]
+            + f"{params['num_episodes']}_epochs/"
+            + f"{params['learning_rate']}_lr/"
+            + f"{params['epsilon_decay']}_eps/"
+    )
     os.makedirs(os.path.dirname(experiment_path), exist_ok=True)
 
     env = create_environment(render=params["render"], api="parallel")
@@ -167,4 +171,4 @@ def train_qatten(params):
 
 
 if __name__ == "__main__":
-    train_qatten(params)
+    train_qatten(params, device)

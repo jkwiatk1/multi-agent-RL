@@ -30,9 +30,13 @@ params = {
 }
 
 
-def train_vdn(params):
-    experiment_path = params[
-                          "model_save_path"] + f"{params['num_episodes']}_epochs/" + f"{params['learning_rate']}_lr/" + f"{params['epsilon_decay']}_eps/"
+def train_vdn(params, device):
+    experiment_path = (
+            params["model_save_path"]
+            + f"{params['num_episodes']}_epochs/"
+            + f"{params['learning_rate']}_lr/"
+            + f"{params['epsilon_decay']}_eps/"
+    )
     os.makedirs(os.path.dirname(experiment_path), exist_ok=True)
 
     env = create_environment(render=params["render"], api="parallel")
@@ -174,4 +178,4 @@ def train_vdn(params):
 
 
 if __name__ == "__main__":
-    train_vdn(params)
+    train_vdn(params, device)
