@@ -6,12 +6,13 @@ from src.models.QATTEN import create_qatten
 from src.utils import select_action, plot_rewards
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+MODEL_RESULT_PATH = (
+    "../results/qatten_mpe_model/0.95_gamma/30000_epochs/0.0001_lr/0.9996_eps"
+)
 
 
 def evaluate(model, env, num_episodes=10, num_agents=3):
     """
-    Ewaluacja modelu Qatten w środowisku wieloagentowym.
-
     Args:
         model: Model Qatten.
         env: Środowisko wieloagentowe.
@@ -42,16 +43,16 @@ def evaluate(model, env, num_episodes=10, num_agents=3):
 
     plot_rewards(
         total_rewards,
-        save_path="../results/qatten_mpe_model/30000_epochs/0.0001_lr/0.9996_eps/evaluation_rewards.png",
+        save_path=MODEL_RESULT_PATH + "/evaluation_rewards.png",
         title="Evaluation Rewards",
     )
 
 
 if __name__ == "__main__":
-    state_dim = 18  # Rozmiar stanu (dla każdego agenta)
-    action_dim = 5  # Rozmiar przestrzeni akcji
-    num_agents = 3  # Liczba agentów
-    best_model_path = "../results/qatten_mpe_model/30000_epochs/0.0001_lr/0.9996_eps/best_qatten_model.pth"
+    state_dim = 18
+    action_dim = 5
+    num_agents = 3
+    best_model_path = MODEL_RESULT_PATH + "/best_qatten_model.pth"
 
     model = create_qatten(state_dim, action_dim, num_agents=num_agents).to(device)
     model.load_state_dict(torch.load(best_model_path, map_location=device))

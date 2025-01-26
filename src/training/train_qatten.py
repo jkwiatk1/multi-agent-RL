@@ -12,8 +12,6 @@ from src.models.QATTEN import create_qatten
 from src.utils import train_step, select_action, save_model, plot_rewards
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Parametry treningowe
 params = {
     "state_dim": 18,
     "action_dim": 5,
@@ -57,7 +55,6 @@ def train_qatten(params, device):
     writer = SummaryWriter(log_dir=experiment_path + "tensorboard_logs")
     start_time = time.time()
 
-    # Statystyki treningowe
     rewards = []
     losses = []
     variances = []
@@ -136,7 +133,6 @@ def train_qatten(params, device):
 
     close_environment(env)
 
-    # Wyniki
     training_time = time.time() - start_time
     mean_reward = np.mean(rewards)
     variance = np.var(rewards)

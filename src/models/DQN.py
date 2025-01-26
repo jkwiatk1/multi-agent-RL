@@ -10,7 +10,6 @@ class DQN(nn.Module):
         self.fc3 = nn.Linear(h2_nodes, action_dim)
 
     def forward(self, state):
-        # print(f"DQN Forward pass: state shape = {state.shape}")
         x = torch.relu(self.fc1(state))
         x = torch.relu(self.fc2(x))
         q_values = self.fc3(x)

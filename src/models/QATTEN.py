@@ -6,10 +6,6 @@ from src.models.DQN import DQN
 
 
 class Qatten(nn.Module):
-    """
-    Qatten model: Wieloagentowy model Q-learning z mechanizmem uwagi.
-    """
-
     def __init__(self, state_dim, action_dim, num_agents, attention_dim=32):
         """
         Args:
@@ -26,7 +22,6 @@ class Qatten(nn.Module):
             [DQN(state_dim, action_dim) for _ in range(num_agents)]
         )
 
-        # Warstwy osadzeń dla uwagi
         self.query_layers = nn.ModuleList(
             [
                 nn.Sequential(
@@ -42,14 +37,12 @@ class Qatten(nn.Module):
             [nn.Linear(state_dim, attention_dim) for _ in range(num_agents)]
         )
 
-        # Warstwy do skalowania wartości Q
         self.scaling_layer = nn.Sequential(
             nn.Linear(state_dim, 1),
             nn.ReLU(),
             nn.Linear(1, 1),
         )
 
-        # Warstwa dla wartości c
         self.constraint_layer = nn.Sequential(
             nn.Linear(state_dim, attention_dim),
             nn.ReLU(),
@@ -68,7 +61,6 @@ class Qatten(nn.Module):
             [agent(state) for agent, state in zip(self.agents, states)], dim=1
         )  # [batch_size, num_agents, action_dim]
 
-        # Embeddingi uwagi (klucze i zapytania)
         keys = torch.stack(
             [key_layer(state) for key_layer, state in zip(self.key_layers, states)],
             dim=1,
@@ -82,7 +74,6 @@ class Qatten(nn.Module):
             dim=1,
         )  # [batch_size, num_agents, attention_dim]
 
-        # Mechanizm uwagi
         attention_scores = torch.einsum("bnd,bmd->bnm", queries, keys) / (
             self.embed_dim**0.5
         )
@@ -90,7 +81,6 @@ class Qatten(nn.Module):
             attention_scores, dim=-1
         )  # [batch_size, num_agents, num_agents]
 
-        # Skalowanie wartości Q agentów
         weighted_qs = torch.einsum(
             "bnm,bna->bna", attention_weights, q_values
         )  # [batch_size, num_agents, action_dim]
@@ -106,14 +96,11 @@ class Qatten(nn.Module):
         # summed_q_values = scaled_q_values.sum(dim=1)  # [batch_size, action_dim]
 
         # Bias
-        c_values = torch.stack([self.constraint_layer(state) for state in states],
-                               dim=1)  # [batch_size, num_agents, attention_dim]
+        c_values = torch.stack(
+            [self.constraint_layer(state) for state in states], dim=1
+        )  # [batch_size, num_agents, attention_dim]
         c_values = torch.mean(c_values, dim=1)
-        # c_values = self.constraint_layer(
-        #     states[0]
-        # )  # Zakładając, że wartości c są obliczane na podstawie jednego stanu (można rozważyć średnią)
         global_q_values = summed_q_values + c_values
-
         return global_q_values
 
 

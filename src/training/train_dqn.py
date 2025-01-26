@@ -13,7 +13,6 @@ from src.utils import select_action, train_step, save_model, plot_rewards
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Parametry treningowe
 params = {
     "state_dim": 18,
     "action_dim": 5,
@@ -52,7 +51,6 @@ def train_dqn(params, device):
     writer = SummaryWriter(log_dir=experiment_path + "tensorboard_logs")
     start_time = time.time()
 
-    # Statystyki treningowe
     rewards = []
     losses = []
     variances = []
@@ -71,7 +69,6 @@ def train_dqn(params, device):
         while not terminated and not truncated:
             for agent in env.agent_iter():
                 observation, reward, termination, truncation, _ = env.last()
-                # observation = (observation - observation.mean()) / (observation.std() + 1e-8)
 
                 action = (
                     None
@@ -92,7 +89,6 @@ def train_dqn(params, device):
                         )
                     )
 
-                # check if enough experience has been collected and TODO if at least 1 reward has been collected 'and total_reward > 0'
                 if len(replay_buffer) >= params["batch_size"]:
                     batch = random.sample(replay_buffer, params["batch_size"])
                     loss = train_step(
@@ -110,10 +106,6 @@ def train_dqn(params, device):
         writer.add_scalar("Episode/Loss", total_loss, episode)
         writer.add_scalar("Episode/Time", episode_times[-1], episode)
         writer.add_scalar("Episode/Epsilon", epsilon, episode)
-
-        # print(
-        #     f"Episode {episode + 1}, Total Reward: {total_reward}, Total Loss: {total_loss}, Time: {time.time() - episode_start}"
-        # )
 
         if episode % params["target_model_sync"] == 0:
             print("New tgt_model loaded")
@@ -137,7 +129,6 @@ def train_dqn(params, device):
 
     close_environment(env)
 
-    # Wyniki
     training_time = time.time() - start_time
     mean_reward = np.mean(rewards)
     variance = np.var(rewards)

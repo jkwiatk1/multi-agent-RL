@@ -1,13 +1,10 @@
 import torch
 import torch.nn as nn
+
 from src.models.DQN import DQN
 
 
 class VDN(nn.Module):
-    """
-    VDN zakłada, że dla każdego agenta mamy wartość Q,
-    """
-
     def __init__(self, state_dim, action_dim, num_agents):
         super().__init__()
         self.agents = nn.ModuleList(
@@ -24,7 +21,7 @@ class VDN(nn.Module):
         """
         q_values = [
             agent(state) for agent, state in zip(self.agents, states)
-        ]  # q_values: lista o  długości num_agents złozona z tensorów [batch_size , action_dim]
+        ]  # q_values: lista [num_agents, [batch_size , action_dim]]
         q_values = torch.stack(
             q_values, dim=0
         )  # tensor: [num_agents, batch_size, action_dim]

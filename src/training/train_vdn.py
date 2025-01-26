@@ -12,8 +12,6 @@ from src.models.VDN import create_vdn
 from src.utils import select_action, train_step, save_model, plot_rewards
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Parametry treningowe
 params = {
     "state_dim": 18,
     "action_dim": 5,
@@ -57,7 +55,6 @@ def train_vdn(params, device):
     writer = SummaryWriter(log_dir=experiment_path + "tensorboard_logs")
     start_time = time.time()
 
-    # Statystyki treningowe
     rewards = []
     losses = []
     variances = []
@@ -84,22 +81,18 @@ def train_vdn(params, device):
 
             total_reward += sum(rewards_dict.values())
 
-            # Zapisz doświadczenia
             replay_buffer.append(
                 (
-                    [observations[agent] for agent in env.agents],  # Stany
-                    [actions[agent] for agent in env.agents],  # Akcje
-                    [rewards_dict[agent] for agent in env.agents],  # Nagrody
-                    [new_observations[agent] for agent in env.agents],  # Nowe stany
-                    any(terminations.values())
-                    or any(truncations.values()),  # Czy epizod zakończony
+                    [observations[agent] for agent in env.agents],
+                    [actions[agent] for agent in env.agents],
+                    [rewards_dict[agent] for agent in env.agents],
+                    [new_observations[agent] for agent in env.agents],
+                    any(terminations.values()) or any(truncations.values()),
                 )
             )
 
-            # Przejdź do nowych obserwacji
             observations = new_observations
 
-            # Trenuj model
             if len(replay_buffer) >= params["batch_size"]:
                 batch = random.sample(replay_buffer, params["batch_size"])
                 loss = train_step(
@@ -143,7 +136,6 @@ def train_vdn(params, device):
 
     close_environment(env)
 
-    # Wyniki
     training_time = time.time() - start_time
     mean_reward = np.mean(rewards)
     variance = np.var(rewards)

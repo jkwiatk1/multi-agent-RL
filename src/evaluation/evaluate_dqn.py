@@ -1,10 +1,14 @@
-import torch
 import numpy as np
-from src.models.DQN import create_dqn
+import torch
+
 from src.environments.mpe import create_environment, close_environment
+from src.models.DQN import create_dqn
 from src.utils import select_action, plot_rewards
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+MODEL_RESULT_PATH = (
+    "../results/dqn_mpe_model/0.95_gamma/10000_epochs/0.0001_lr/0.9996_eps"
+)
 
 
 def evaluate(model, env, num_episodes=10):
@@ -28,7 +32,7 @@ def evaluate(model, env, num_episodes=10):
 
     plot_rewards(
         total_rewards,
-        save_path="../results/dqn_mpe_model/evaluation_rewards.png",
+        save_path=MODEL_RESULT_PATH + "/evaluation_rewards.png",
         title="Evaluation Rewards",
     )
 
@@ -36,7 +40,7 @@ def evaluate(model, env, num_episodes=10):
 if __name__ == "__main__":
     state_dim = 18
     action_dim = 5
-    best_model_path = "../results/dqn_mpe_model/best_dqn_model.pth"
+    best_model_path = MODEL_RESULT_PATH + "/best_dqn_model.pth"
 
     model = create_dqn(state_dim, action_dim).to(device)
     model.load_state_dict(torch.load(best_model_path, map_location=device))

@@ -3,8 +3,6 @@ from pettingzoo.mpe import simple_spread_v3
 
 def create_environment(render=False, api="aec"):
     """
-    Tworzy i resetuje środowisko.
-
     Args:
         render (bool): Czy włączyć renderowanie środowiska.
 
@@ -24,8 +22,6 @@ def create_environment(render=False, api="aec"):
 
 def close_environment(env):
     """
-    Zamyka środowisko.
-
     Args:
         env: Obiekt środowiska do zamknięcia.
     """

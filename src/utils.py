@@ -13,7 +13,7 @@ def select_action(state, model, epsilon=0.1):
     Wybór akcji na podstawie epsilon-greedy.
     Args:
         state: Obserwacja ze środowiska.
-        model: Model DQN.
+        model: Model.
         epsilon: Wartość epsilon dla eksploracji.
     Returns:
         Wybrana akcja (int).
@@ -44,14 +44,13 @@ def train_step(
 
     Args:
         batch: Partia danych (stan, akcja, nagroda, kolejny stan, zakończenie epizodu).
-        model: Aktualny model DQN/VDN/QMIX/Qatten.
+        model: Aktualny model DQN/VDN/Qatten.
         target_model: Model docelowy.
         optimizer: Optymalizator.
         discount_factor_g: Współczynnik dyskontowania.
         num_agents: Liczba agentów (domyślnie 1 dla DQN).
-        model_type: Typ modelu ("dqn", "vdn", "qmix", "qatten").
+        model_type: Typ modelu ("dqn", "vdn", "qatten").
     """
-    # Rozpakowanie batcha
     states, actions, rewards, next_states, dones = zip(*batch)
 
     if model_type == "dqn":
@@ -61,11 +60,6 @@ def train_step(
         rewards = torch.tensor(rewards).to(device)
         next_states = torch.tensor(next_states).to(device)
         dones = torch.FloatTensor(dones).to(device)
-
-        # orginal DQN- target zwraca Q dla kolejnej akcji
-        # q_values = model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
-        # with torch.no_grad():
-        #     next_q_values = target_model(next_states).max(dim=1)[0]
 
         # double DQN - target zwraca Q dla akcji wybranej przez model bazowy (podobno lepsze)
         q_values_taken = model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
@@ -79,7 +73,7 @@ def train_step(
 
         q_targets = rewards + discount_factor_g * next_q_values * (1 - dones)
 
-    elif model_type in ["vdn", "qmix", "qatten"]:
+    elif model_type in ["vdn", "qatten"]:
         # Wielu agentów
         states = [
             torch.tensor([s[i] for s in states if len(s) > i]).to(device)
@@ -139,12 +133,7 @@ def train_step(
                 dim=0
             )  # [batch_size]
 
-        elif model_type == "qmix":
-            # QMIX: Monotoniczne mieszanie wartości Q
-            pass
-
         elif model_type == "qatten":
-            # Qatten: Agregacja wartości Q z uwzględnieniem mechanizmu uwagi
             global_rewards = sum(rewards)  # tensor [batch_size]
             q_values = model(states)  # [batch_size, action_dim]
 
@@ -179,7 +168,6 @@ def train_step(
 
 def save_model(model, path):
     """
-    Zapisuje model
     Args:
         model: Model.
         path: Ścieżka do zapisu modelu.
@@ -200,8 +188,6 @@ def plot_rewards(
     x_label="Episode",
 ):
     """
-    Wykres dla danego eksperymentu.
-
     Args:
         rewards (list): Lista wyników dla kolejnych epizodów.
         save_path (str): Opcjonalna ścieżka do zapisu wykresu.
