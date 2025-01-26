@@ -7,7 +7,7 @@ from src.utils import select_action, plot_rewards
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_RESULT_PATH = (
-    "../results/dqn_mpe_model/0.95_gamma/10000_epochs/0.0001_lr/0.9996_eps"
+    "../results/dqn_mpe_model/0.9_gamma/25000_epochs/0.0001_lr/0.9996_eps"
 )
 
 
