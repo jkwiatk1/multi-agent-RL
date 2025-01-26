@@ -9,7 +9,6 @@ for agent in env.agent_iter():
     if termination or truncation:
         action = None
     else:
-        # this is where you would insert your policy
         action = env.action_space(agent).sample()
 
     env.step(action)
