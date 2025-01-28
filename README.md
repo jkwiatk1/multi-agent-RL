@@ -89,3 +89,39 @@ To visualize experiment results using TensorBoard. Run example:
 Open TensorBoard in your browser by navigating to:
 
 * `http://localhost:6006/`
+
+
+# Background 
+## Environment: PettingZoo.MPE
+* DOCUMENTATION: https://pettingzoo.farama.org/environments/mpe/simple_spread/
+* EXAMPLE_1: https://cocalc.com/share/public_paths/38a4d0aaa976e34b0c5e6df80cec05c9b6cb29d2
+* EXAMPLE_2: https://towardsdatascience.com/multi-agent-deep-reinforcement-learning-in-15-lines-of-code-using-pettingzoo-e0b963c0820b
+* DOCUMENTATION_example_1: https://openrl-docs.readthedocs.io/en/stable/quick_start/multi_agent_RL.html#track-training-process-with-wandb
+* DOCUMENTATION_example_2: https://xuance.readthedocs.io/en/latest/documents/api/environments/multi_agent_env/mpe.html 
+* PAPER: https://arxiv.org/pdf/2009.14471
+* OFFICIAL: https://github.com/Farama-Foundation/PettingZoo/tree/master
+* OPENAI MARL: https://github.com/openai/multiagent-particle-envs
+* VIDEO: https://www.youtube.com/watch?v=IMpf_X1IN_0
+
+**Examples**:
+* https://github.com/sumitsk/marl_transfer/tree/master
+
+## Algorithms: 
+* MARL libs described: https://marllib.readthedocs.io/en/latest/resources/benchmarks.html#id4
+* MARL libs:
+   - https://github.com/agi-brain/xuance/tree/master
+   - https://github.com/oxwhirl/pymarl?tab=readme-ov-file
+   - https://github.com/marlbenchmark/off-policy
+   - https://github.com/uoe-agents/epymarl/tree/main
+* DQN:
+   - https://github.com/mohammadasghari/dqn-multi-agent-rl/tree/master
+   - https://www.youtube.com/watch?v=EUrWGTCGzlA
+   - https://stable-baselines3.readthedocs.io/en/master/modules/dqn.html
+   - https://pytorch.org/tutorials/intermediate/reinforcement_q_learning.htm
+   - https://github.com/johnnycode8/gym_solutions/blob/main/frozen_lake_dql.py
+* VDN:
+   - PAPER: https://arxiv.org/pdf/1706.05296
+   - https://medium.com/@tym406/preliminary-implementation-of-marl-transformer-centralized-vdn-1-7149d61d9d60
+   - https://frankccccc.github.io/blog/posts/simple_guide_of_vdn_and_qmix/
+* Qatten:
+   - PAPER: https://arxiv.org/pdf/2002.03939
