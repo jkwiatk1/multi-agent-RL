@@ -12,6 +12,15 @@ The focus is on algorithms
 
 The repository provides training scripts, environment configurations, and tools for analyzing results using.
 
+## VDN results
+<img src="src/results/eval_example/vdn.gif" width="500"/>
+![Training Demo](src/results/eval_example/vdn.gif)
+
+<img src="src/results/eval_example/vdn_total_reward.png" width="500">
+![VDN Total Reward](src/results/eval_example/vdn_total_reward.png)
+
+<img src="src/results/eval_example/vdn_training_loss.png" width="500">
+![VDN Training Loss](src/results/eval_example/vdn_training_loss.png)
 ---
 
 ## Installation Guide
